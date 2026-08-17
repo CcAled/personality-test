@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双轨人格测评 · MBTI × 大五人格</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  #app { max-width:720px; margin:0 auto; }
+  .page { display:none; }
+  .page.active { display:block; }
+  .welcome-title { font-size:32px; font-weight:700; line-height:1.2; margin-bottom:10px; }
+  .welcome-sub { font-size:16px; color:#6e6e73; line-height:1.6; margin-bottom:28px; }
+  .welcome-card { background:#fff; border-radius:16px; padding:24px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+  .welcome-card h3 { font-size:17px; font-weight:600; margin-bottom:12px; }
+  .welcome-card p { font-size:15px; color:#6e6e73; line-height:1.6; }
+  .welcome-card .tag { display:inline-block; background:#1d1d1f; color:#fff; padding:4px 12px; border-radius:8px; font-size:13px; margin:3px; font-weight:500; }
+  .btn-primary { background:#1d1d1f; color:#fff; border:none; padding:14px 32px; border-radius:12px; font-size:16px; font-weight:500; cursor:pointer; transition:opacity 0.2s; }
+  .btn-primary:hover { opacity:0.85; }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-secondary { background:transparent; color:#1d1d1f; border:1px solid #d2d2d7; padding:12px 24px; border-radius:12px; font-size:15px; cursor:pointer; }
+  .btn-secondary:hover { background:#f5f5f7; }
+  .btn-danger { background:#c62828; color:#fff; border:none; padding:14px 32px; border-radius:12px; font-size:16px; font-weight:500; cursor:pointer; }
+  .btn-danger:hover { opacity:0.85; }
+  .progress-bar { height:4px; background:#e5e5ea; border-radius:2px; margin-bottom:20px; overflow:hidden; }
+  .progress-fill { height:100%; background:#1d1d1f; border-radius:2px; transition:width 0.4s ease; }
+  .progress-text { font-size:13px; color:#86868b; margin-bottom:8px; text-align:right; }
+  .q-card { background:#fff; border:1px solid #e5e5ea; border-radius:12px; padding:20px; margin-bottom:12px; transition:border-color 0.2s; }
+  .q-card:hover { border-color:#c7c7cc; }
+  .q-num { font-size:13px; color:#86868b; margin-bottom:6px; }
+  .q-text { font-size:16px; line-height:1.5; margin-bottom:14px; font-weight:400; }
+  .q-meta { font-size:12px; color:#c7c7cc; margin-bottom:12px; }
+  .options { display:flex; gap:8px; flex-wrap:wrap; }
+  .opt-btn { flex:1; min-width:70px; padding:12px 8px; border:1px solid #d2d2d7; border-radius:10px; background:#fff; cursor:pointer; font-size:14px; color:#6e6e73; transition:all 0.2s; text-align:center; }
+  .opt-btn:hover { background:#f5f5f7; }
+  .opt-btn.selected { background:#1d1d1f; color:#fff; border-color:#1d1d1f; }
+  .opt-labels { display:flex; justify-content:space-between; font-size:12px; color:#c7c7cc; margin-top:6px; padding:0 4px; }
+  .nav-btns { display:flex; justify-content:space-between; margin-top:28px; }
+  .apikey-card { background:#fff; border-radius:16px; padding:32px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04); text-align:center; }
+  .apikey-card h2 { font-size:24px; margin-bottom:12px; }
+  .apikey-card p { font-size:15px; color:#6e6e73; line-height:1.6; margin-bottom:20px; }
+  .apikey-input { width:100%; padding:14px; border:1px solid #d2d2d7; border-radius:10px; font-size:15px; margin-bottom:16px; font-family:inherit; }
+  .apikey-input:focus { outline:none; border-color:#1d1d1f; }
+  .apikey-hint { font-size:13px; color:#86868b; margin-top:12px; }
+  .apikey-hint a { color:#0071e3; text-decoration:none; }
+  .loading-wrap { text-align:center; padding:60px 20px; }
+  .loading-spinner { width:40px; height:40px; border:3px solid #e5e5ea; border-top-color:#1d1d1f; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { font-size:18px; font-weight:500; margin-bottom:8px; }
+  .loading-sub { font-size:14px; color:#86868b; }
+
+  /* Result page styles */
+  .result-wrap { background:#fff; border-radius:16px; padding:28px; box-shadow:0 1px 3px rgba(0,0,0,0.04); margin-bottom:20px; }
+  .result-header-bar { border-left:4px solid #1d1d1f; padding-left:16px; margin-bottom:24px; }
+  .result-header-bar h2 { font-size:22px; font-weight:700; }
+  .result-header-bar p { font-size:14px; color:#86868b; margin-top:4px; }
+
+  /* Graphical display */
+  .graph-section { margin:24px 0; }
+  .graph-section h3 { font-size:18px; font-weight:600; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #e5e5ea; }
+  .radar-wrap { display:flex; justify-content:center; margin:20px 0; }
+  .radar-svg { width:320px; height:280px; }
+  .radar-label { font-size:12px; fill:#86868b; text-anchor:middle; font-family:inherit; }
+  .radar-axis { stroke:#e5e5ea; stroke-width:1; fill:none; }
+  .radar-grid { stroke:#f5f5f7; stroke-width:1; fill:none; }
+  .radar-data { fill:rgba(0,113,227,0.15); stroke:#0071e3; stroke-width:2; }
+  .radar-point { fill:#0071e3; }
+  .score-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .score-label { width:70px; font-size:15px; font-weight:500; }
+  .score-bar-wrap { flex:1; height:10px; background:#e5e5ea; border-radius:5px; overflow:hidden; }
+  .score-bar { height:100%; border-radius:5px; transition:width 0.8s ease; }
+  .score-val { width:48px; font-size:15px; font-weight:600; text-align:right; }
+  .dim-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  @media(max-width:600px){ .dim-grid { grid-template-columns:1fr; } }
+  .dim-card { background:#fff; border:1px solid #e5e5ea; border-radius:12px; padding:16px; }
+  .dim-card h5 { font-size:13px; color:#86868b; margin-bottom:4px; font-weight:400; }
+  .dim-card .dim-val { font-size:28px; font-weight:600; }
+  .dim-card .dim-bar { height:4px; background:#e5e5ea; border-radius:2px; margin-top:10px; overflow:hidden; }
+  .dim-card .dim-bar-inner { height:100%; border-radius:2px; transition:width 0.8s ease; }
+
+  /* MBTI dimension bars */
+  .mbti-dim-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .mbti-dim-label { width:80px; font-size:14px; font-weight:500; }
+  .mbti-dim-bar-wrap { flex:1; height:24px; background:#e5e5ea; border-radius:12px; overflow:hidden; display:flex; position:relative; }
+  .mbti-dim-left { height:100%; border-radius:12px 0 0 12px; transition:width 0.8s ease; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:11px; color:#fff; font-weight:500; }
+  .mbti-dim-right { height:100%; border-radius:0 12px 12px 0; transition:width 0.8s ease; display:flex; align-items:center; justify-content:flex-start; padding-left:8px; font-size:11px; color:#fff; font-weight:500; }
+  .mbti-dim-center { position:absolute; left:50%; top:0; bottom:0; width:2px; background:#fff; transform:translateX(-50%); z-index:2; }
+  .mbti-dim-pct { width:60px; font-size:13px; color:#86868b; text-align:right; }
+
+  /* Markdown content */
+  .report-title { font-size:32px; font-weight:700; text-align:center; letter-spacing:4px; margin:14px 0 4px; line-height:1.3; }
+  .md-content h2 { font-size:19px; font-weight:700; margin:34px 0 14px; padding-bottom:8px; border-bottom:2px solid #1d1d1f; letter-spacing:1px; }
+  .md-content h3 { font-size:16px; font-weight:600; margin:22px 0 10px; color:#c62828; }
+  .md-content p { font-size:15px; line-height:1.9; margin-bottom:14px; color:#333; }
+  .md-content strong { font-weight:600; color:#1d1d1f; }
+  .md-content blockquote { border:none; border-top:1px solid #d2d2d7; border-bottom:1px solid #d2d2d7; margin:18px 0 30px; padding:20px 16px; text-align:center; font-style:italic; font-size:16.5px; color:#1d1d1f; line-height:2; background:none; border-radius:0; }
+  .type-badge { display:flex; justify-content:center; gap:10px; margin:8px 0 6px; }
+  .type-letter { width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
+  .type-badge-sub { text-align:center; font-size:12px; color:#86868b; margin-bottom:22px; }
+  .md-content ul { margin:12px 0 12px 20px; }
+  .md-content li { font-size:15px; line-height:1.8; margin-bottom:6px; }
+  .md-content hr { border:none; border-top:1px solid #e5e5ea; margin:24px 0; }
+
+  .fallback-box { background:#fff3e0; border-radius:12px; padding:20px; margin-top:20px; }
+  .fallback-box h4 { font-size:16px; margin-bottom:10px; color:#ef6c00; }
+  .fallback-box p { font-size:14px; color:#6e6e73; margin-bottom:12px; }
+  .prompt-textarea { width:100%; min-height:200px; padding:12px; border:1px solid #e5e5ea; border-radius:8px; font-size:13px; font-family:monospace; line-height:1.5; resize:vertical; }
+  .error-box { background:#ffebee; border-radius:12px; padding:20px; margin-top:20px; color:#c62828; }
+  .error-box h4 { font-size:16px; margin-bottom:8px; }
+  .error-box p { font-size:14px; line-height:1.6; }
+  .restart-btn { text-align:center; margin-top:32px; margin-bottom:40px; }
+  .share-tip { background:#fff; border-radius:12px; padding:20px; margin-top:24px; text-align:center; }
+  .share-tip h4 { font-size:16px; margin-bottom:8px; }
+  .share-tip p { font-size:14px; color:#86868b; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background:#1c1c1e; color:#f5f5f7; }
+    .welcome-card, .q-card, .apikey-card, .result-wrap, .share-tip, .dim-card { background:#2c2c2e; border-color:#3a3a3c; }
+    .welcome-card p, .q-text, .apikey-card p, .share-tip p { color:#a1a1a6; }
+    .welcome-sub, .q-num, .q-meta, .opt-labels, .apikey-hint, .loading-sub { color:#8e8e93; }
+    .opt-btn { background:#2c2c2e; border-color:#3a3a3c; color:#a1a1a6; }
+    .opt-btn:hover { background:#3a3a3c; }
+    .opt-btn.selected { background:#f5f5f7; color:#1c1c1e; border-color:#f5f5f7; }
+    .btn-secondary { color:#f5f5f7; border-color:#3a3a3c; }
+    .btn-secondary:hover { background:#3a3a3c; }
+    .apikey-input { background:#1c1c1e; color:#f5f5f7; border-color:#3a3a3c; }
+    .apikey-input:focus { border-color:#f5f5f7; }
+    .md-content p { color:#d1d1d6; }
+    .md-content strong { color:#f5f5f7; }
+    .md-content blockquote { color:#f5f5f7; border-color:#3a3a3c; }
+    .md-content h2 { border-color:#f5f5f7; }
+    .fallback-box { background:#3a2a1a; }
+    .error-box { background:#3a1f1f; }
+    .prompt-textarea { background:#1c1c1e; color:#f5f5f7; border-color:#3a3a3c; }
+    .score-bar-wrap, .dim-card .dim-bar, .mbti-dim-bar-wrap { background:#3a3a3c; }
+    .radar-grid { stroke:#3a3a3c; }
+    .radar-axis { stroke:#3a3a3c; }
+    .radar-label { fill:#8e8e93; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="page-welcome" class="page active">
+  <div class="welcome-title">双轨人格测评</div>
+  <div class="welcome-sub">60道题，同时映射MBTI与大五人格。答完后由AI一针见血地分析你——诗意、文学、直击灵魂。</div>
+  <div class="welcome-card">
+    <h3>测什么</h3>
+    <p>60 道题，每道题同时映射到 <span class="tag">MBTI</span> <span class="tag">大五人格</span> 两个维度，含反向计分题。请凭第一反应如实作答——不要揣测"标准答案"，也不要按理想中的自己来答。</p>
+  </div>
+  <div class="welcome-card">
+    <h3>你会得到什么</h3>
+    <p>AI 会根据你的每一道题的具体答案，生成一份只属于你的人格诊断：</p>
+    <p style="margin-top:8px">• 一个原创的人格称号 + 一句戳穿你的判词<br>• 「轮廓 → 战场·职业 → 镜子·成长 → 渡口·关系」完整解剖，每个维度多条优劣势逐一剖开<br>• 你体内的战争：人格维度间的矛盾与张力<br>• 你的阿喀琉斯之踵：致命模式的三段推演 + 箴言收尾<br>• MBTI 类型徽章 + 四维趋势图 + 大五人格光谱图</p>
+  </div>
+  <div class="welcome-card">
+    <h3>你需要准备</h3>
+    <p>一个 <strong>Moonshot API Key</strong>（KIMI大模型）。答题结束后输入API Key，分析由KIMI实时生成。没有API Key？页面会生成完整Prompt，你可以复制到 <a href="https://kimi.moonshot.cn" target="_blank">KIMI网页版</a> 手动分析。</p>
+  </div>
+  <div style="text-align:center;margin-top:32px;">
+    <button class="btn-primary" onclick="startTest()">开始测试</button>
+  </div>
+</div>
+
+<div id="page-quiz" class="page">
+  <div class="progress-text" id="progress-text">第 1 / 6 页</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="quiz-container"></div>
+  <div class="nav-btns">
+    <button class="btn-secondary" id="btn-prev" onclick="prevPage()" style="visibility:hidden">上一页</button>
+    <button class="btn-primary" id="btn-next" onclick="nextPage()">下一页</button>
+  </div>
+</div>
+
+<div id="page-apikey" class="page">
+  <div class="apikey-card">
+    <h2>准备接受审判</h2>
+    <p>60道题已完成。现在需要调用 KIMI AI 进行深度分析。<br>请输入你的 Moonshot API Key，分析结果将实时生成。</p>
+    <input type="password" class="apikey-input" id="apikey-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+    <div>
+      <button class="btn-danger" onclick="analyzeWithAPI()" id="btn-analyze">开始分析</button>
+    </div>
+    <div class="apikey-hint">
+      <p>没有 API Key？<a href="https://platform.moonshot.cn/" target="_blank">去 Moonshot 平台获取</a>（注册即送额度）</p>
+      <p style="margin-top:8px">或者点击「<a href="javascript:showFallback()">我没有API Key</a>」生成完整Prompt，复制到 KIMI 网页版手动分析。</p>
+    </div>
+  </div>
+</div>
+
+<div id="page-loading" class="page">
+  <div class="loading-wrap">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI 正在审阅你的答卷...</div>
+    <div class="loading-sub">这可能需要 10-30 秒，取决于网络状况</div>
+  </div>
+</div>
+
+<div id="page-result" class="page">
+  <!-- AI Generated Content -->
+  <div class="result-wrap">
+    <div class="result-header-bar">
+      <h2>人格诊断报告</h2>
+      <p>由 KIMI AI 基于你的 60 道答题实时生成</p>
+    </div>
+    <div class="md-content" id="result-content"></div>
+  </div>
+
+  <!-- Graphical Display: MBTI 4 Dimensions -->
+  <div class="result-wrap graph-section">
+    <h3>MBTI 四维 · 你的倾向</h3>
+    <div id="mbti-dims"></div>
+  </div>
+
+  <!-- Graphical Display: Big Five Radar -->
+  <div class="result-wrap graph-section">
+    <h3>大五人格 · 你的光谱</h3>
+    <div class="radar-wrap">
+      <svg class="radar-svg" id="radar-svg" viewBox="0 0 320 280"></svg>
+    </div>
+    <div id="big5-bars"></div>
+    <div class="dim-grid" id="dim-grid"></div>
+  </div>
+
+  <div id="fallback-section" style="display:none;">
+    <div class="fallback-box">
+      <h4>API 调用失败？手动分析</h4>
+      <p>复制下方完整 Prompt，粘贴到 <a href="https://kimi.moonshot.cn" target="_blank">KIMI 网页版</a> 发送即可：</p>
+      <textarea class="prompt-textarea" id="prompt-textarea" readonly></textarea>
+      <button class="btn-secondary" onclick="copyPrompt()" style="margin-top:10px;">复制 Prompt</button>
+    </div>
+  </div>
+
+  <div class="restart-btn">
+    <button class="btn-secondary" onclick="restart()">重新测试</button>
+  </div>
+
+  <div class="share-tip">
+    <h4>分享这个测试</h4>
+    <p>把这个 HTML 文件直接发给朋友，对方用浏览器打开就能做。<br>不需要联网、不需要注册、数据只存在本地。</p>
+  </div>
+</div>
+</div>
+
+<script>
+const questions = [
+  {text:"在人群里我感到自在，很容易就和人聊了起来。", mbti:"E", big5:"E"},
+  {text:"我常常问自己“如果……会怎样”，并乐此不疲。", mbti:"N", big5:"O"},
+  {text:"朋友倾诉烦恼时，我会先接住他的情绪，而不是急着给建议。", mbti:"F", big5:"A"},
+  {text:"我习惯提前把事情规划好，并且基本能按计划走完。", mbti:"J", big5:"C"},
+  {text:"我喜欢认识新朋友，陌生人对我来说是机会而不是负担。", mbti:"E", big5:"E"},
+  {text:"抽象的理论和概念，对我有种天然的吸引力。", mbti:"N", big5:"O"},
+  {text:"做决定时，我会认真掂量每个相关的人会是什么感受。", mbti:"F", big5:"A"},
+  {text:"任务我倾向尽早完成，拖着不做会让我不安。", mbti:"J", big5:"C"},
+  {text:"我的精力好像用不完，连轴转一天也不觉得累。", mbti:"E", big5:"E"},
+  {text:"一件小事，我也容易联想到它背后的规律和更大的可能。", mbti:"N", big5:"O"},
+  {text:"看到弱者被亏待，我会比当事人还气愤。", mbti:"F", big5:"A"},
+  {text:"我的东西都有固定的位置，用完会放回原处。", mbti:"J", big5:"C"},
+  {text:"热闹场合待久了，我会想提前离场，一个人安静一会儿。", mbti:"I", big5:"E", rev:true},
+  {text:"想象得再美，我也更相信眼睛看到、手摸得着的东西。", mbti:"S", big5:"O", rev:true},
+  {text:"对就是对，错就是错，情面改变不了我的判断。", mbti:"T", big5:"A", rev:true},
+  {text:"截止日期才是我的第一生产力，之前我常常在做别的事。", mbti:"P", big5:"C", rev:true},
+  {text:"和不熟的人闲聊，对我来说是一件相当费劲的事。", mbti:"I", big5:"E", rev:true},
+  {text:"我对“假如”“可能”这类假设性问题没什么耐心，眼下的问题还没解决完。", mbti:"S", big5:"O", rev:true},
+  {text:"别人哭诉时，我更想帮他分析问题出在哪，而不是陪着他难过。", mbti:"T", big5:"A", rev:true},
+  {text:"我的桌面常常很乱，但我知道每样东西在哪儿。", mbti:"P", big5:"C", rev:true},
+  {text:"社交软件上的闲聊很消耗我，能不回的消息我就拖着不回。", mbti:"I", big5:"E", rev:true},
+  {text:"学新东西时，我需要具体的例子和步骤，纯理论我很难听进去。", mbti:"S", big5:"O", rev:true},
+  {text:"被亲近的人否定，我表面没事，心里却会疼很久。", mbti:"F", big5:"N"},
+  {text:"计划赶不上变化，所以我索性很少做计划。", mbti:"P", big5:"C", rev:true},
+  {text:"看到别人情绪低落，我会忍不住上前安慰。", mbti:"E", big5:"A"},
+  {text:"我做事有自己的章法，文件和物品都收拾得井井有条。", mbti:"S", big5:"C"},
+  {text:"身边的人情绪低落，也不太会影响到我自己的状态。", mbti:"T", big5:"N", rev:true},
+  {text:"做事过程中冒出更好的想法，我会毫不犹豫地推翻原方案。", mbti:"P", big5:"O"},
+  {text:"聊天时有人说了明显不靠谱的话，我会当场指出来。", mbti:"E", big5:"A", rev:true},
+  {text:"我容易注意到别人忽略的细节，比如一处对不上的数字。", mbti:"S", big5:"C"},
+  {text:"争论再激烈，我也能就事论事，不会被情绪带走。", mbti:"T", big5:"N", rev:true},
+  {text:"日程留白让我兴奋，排得满满当当反而让我窒息。", mbti:"P", big5:"O"},
+  {text:"我很难向不熟的人敞开心扉，哪怕对方很热情。", mbti:"I", big5:"A", rev:true},
+  {text:"我常常一头扎进想法里，回过神来才发现忘了现实的安排。", mbti:"N", big5:"C", rev:true},
+  {text:"压力越大，我反而越冷静。", mbti:"T", big5:"N", rev:true},
+  {text:"试过且有效的方法，我没兴趣为了新鲜感去换掉它。", mbti:"J", big5:"O", rev:true},
+  {text:"即使在众人面前出了丑，我也能一笑而过，不太往心里去。", mbti:"E", big5:"N", rev:true},
+  {text:"比起把想法落地执行，我更享受构思的阶段，收尾常被我拖着。", mbti:"N", big5:"C", rev:true},
+  {text:"我欣赏对事不对人的规则，并且自己也是这样执行的。", mbti:"T", big5:"C"},
+  {text:"计划被突然打乱时，我需要好一会儿才能平复情绪。", mbti:"J", big5:"N"},
+  {text:"在陌生人面前，我会不自觉地琢磨“他们现在怎么看我”。", mbti:"I", big5:"N"},
+  {text:"我倾向于先相信别人是善意的，哪怕才刚认识。", mbti:"N", big5:"A"},
+  {text:"如果死守规则会伤害一个具体的人，我会选择为这个人破例。", mbti:"F", big5:"C", rev:true},
+  {text:"安排泡汤了，我转头就找下一件事，不太往心里去。", mbti:"P", big5:"N", rev:true},
+  {text:"一句说得不妥当的话，我能在心里翻来覆去回放一整天。", mbti:"I", big5:"N"},
+  {text:"我习惯先看一个人实际怎么做，再决定要不要信任他。", mbti:"S", big5:"A", rev:true},
+  {text:"大家意见一致时，我常常是那个泼冷水的人。", mbti:"T", big5:"E"},
+  {text:"朋友临时求助，哪怕打乱我的安排，我也愿意先帮他。", mbti:"P", big5:"A"},
+  {text:"和一个人深聊一个好话题，比参加十场热闹聚会更让我满足。", mbti:"I", big5:"O"},
+  {text:"事情没有落实之前，我心里会一直悬着，放不下。", mbti:"S", big5:"N"},
+  {text:"我不怕当众表达不同立场，哪怕气氛会因此紧张。", mbti:"T", big5:"E"},
+  {text:"别人的请求打乱我的既定安排时，我会明确地拒绝。", mbti:"J", big5:"A", rev:true},
+  {text:"聚会上话题变得太抽象时，我会把话题拉回大家都熟悉的日常。", mbti:"E", big5:"O", rev:true},
+  {text:"一个细节出了错，哪怕没人发现，我也会反复惦记。", mbti:"S", big5:"N"},
+  {text:"有不同意见时，我常常咽回肚子里，怕说出来伤和气。", mbti:"F", big5:"E", rev:true},
+  {text:"节奏快、变数多的环境让我浑身来劲。", mbti:"P", big5:"E"},
+  {text:"与其听人聊宏大的理念，我更想听对方讲真实经历过的事。", mbti:"I", big5:"O", rev:true},
+  {text:"面对未知的变化，我心里更多是好奇，而不是担忧。", mbti:"N", big5:"N", rev:true},
+  {text:"让我当众反驳别人，比让我承认错误还难受。", mbti:"F", big5:"E", rev:true},
+  {text:"我更喜欢稳定、可预期的节奏，突发变动让我疲惫。", mbti:"J", big5:"E", rev:true},
+];
+
+const mbtiLabels = {E:"E-外向", I:"I-内向", S:"S-感觉", N:"N-直觉", T:"T-思考", F:"F-情感", J:"J-判断", P:"P-知觉"};
+const big5Labels = {O:"O-开放性", C:"C-尽责性", E:"E-外向性", A:"A-宜人性", N:"N-神经质"};
+
+let answers = new Array(questions.length).fill(0);
+let currentPage = 0;
+const perPage = 10;
+const totalPages = Math.ceil(questions.length / perPage);
+let currentPrompt = "";
+let localScores = null;
+
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(function(p) { p.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+}
+
+function startTest() {
+  answers = new Array(questions.length).fill(0);
+  currentPage = 0;
+  localScores = null;
+  showPage("page-quiz");
+  renderQuizPage();
+}
+
+function restart() {
+  showPage("page-welcome");
+}
+
+function renderQuizPage() {
+  const container = document.getElementById("quiz-container");
+  const start = currentPage * perPage;
+  const end = Math.min(start + perPage, questions.length);
+  let html = "";
+  for (let i = start; i < end; i++) {
+    const q = questions[i];
+    const selected = answers[i] || 0;
+    const sel1 = selected === 1 ? "selected" : "";
+    const sel2 = selected === 2 ? "selected" : "";
+    const sel3 = selected === 3 ? "selected" : "";
+    const sel4 = selected === 4 ? "selected" : "";
+    const sel5 = selected === 5 ? "selected" : "";
+    html += '<div class="q-card">' +
+      '<div class="q-num">第 ' + (i+1) + ' 题 / 共 60 题</div>' +
+      '<div class="q-text">' + q.text + '</div>' +
+      '<div class="options">' +
+        '<button class="opt-btn ' + sel1 + '" onclick="selectOpt(' + i + ',1)">1</button>' +
+        '<button class="opt-btn ' + sel2 + '" onclick="selectOpt(' + i + ',2)">2</button>' +
+        '<button class="opt-btn ' + sel3 + '" onclick="selectOpt(' + i + ',3)">3</button>' +
+        '<button class="opt-btn ' + sel4 + '" onclick="selectOpt(' + i + ',4)">4</button>' +
+        '<button class="opt-btn ' + sel5 + '" onclick="selectOpt(' + i + ',5)">5</button>' +
+      '</div>' +
+      '<div class="opt-labels">' +
+        '<span>完全不符合</span>' +
+        '<span>不太符合</span>' +
+        '<span>一般</span>' +
+        '<span>比较符合</span>' +
+        '<span>完全符合</span>' +
+      '</div>' +
+    '</div>';
+  }
+  container.innerHTML = html;
+  document.getElementById("progress-text").textContent = "第 " + (currentPage+1) + " / " + totalPages + " 页";
+  document.getElementById("progress-fill").style.width = ((currentPage+1)/totalPages)*100 + "%";
+  document.getElementById("btn-prev").style.visibility = currentPage > 0 ? "visible" : "hidden";
+  document.getElementById("btn-next").textContent = currentPage === totalPages-1 ? "完成，去分析" : "下一页";
+}
+
+function selectOpt(idx, val) {
+  answers[idx] = val;
+  const cards = document.querySelectorAll(".q-card");
+  const card = cards[idx % perPage];
+  const btns = card.querySelectorAll(".opt-btn");
+  btns.forEach(function(b, i) {
+    b.classList.toggle("selected", i+1 === val);
+  });
+}
+
+function nextPage() {
+  const start = currentPage * perPage;
+  const end = Math.min(start + perPage, questions.length);
+  for (let i = start; i < end; i++) {
+    if (!answers[i]) {
+      alert("第 " + (i+1) + " 题还没选哦");
+      return;
+    }
+  }
+  if (currentPage < totalPages - 1) {
+    currentPage++;
+    renderQuizPage();
+  } else {
+    computeLocalScores();
+    showPage("page-apikey");
+  }
+}
+
+function prevPage() {
+  if (currentPage > 0) {
+    currentPage--;
+    renderQuizPage();
+  }
+}
+
+// ========== Local Score Computation ==========
+function computeLocalScores() {
+  const mbtiScores = {E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0};
+  const big5Scores = {O:0, C:0, E:0, A:0, N:0};
+  const big5Counts = {O:0, C:0, E:0, A:0, N:0};
+  const mbtiOpposite = {E:"I", I:"E", S:"N", N:"S", T:"F", F:"T", J:"P", P:"J"};
+
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    const val = answers[i];
+    mbtiScores[q.mbti] += val;
+    mbtiScores[mbtiOpposite[q.mbti]] += 6 - val;
+    big5Scores[q.big5] += q.rev ? (6 - val) : val;
+    big5Counts[q.big5]++;
+  }
+
+  const mbtiType =
+    (mbtiScores.E >= mbtiScores.I ? "E" : "I") +
+    (mbtiScores.S >= mbtiScores.N ? "S" : "N") +
+    (mbtiScores.T >= mbtiScores.F ? "T" : "F") +
+    (mbtiScores.J >= mbtiScores.P ? "J" : "P");
+
+  const big5Pct = {};
+  for (const dim of ["O","C","E","A","N"]) {
+    const n = big5Counts[dim];
+    big5Pct[dim] = Math.round(((big5Scores[dim] - n) / (n * 4)) * 100);
+  }
+
+  const mbtiPct = {};
+  const eiTotal = mbtiScores.E + mbtiScores.I;
+  const snTotal = mbtiScores.S + mbtiScores.N;
+  const tfTotal = mbtiScores.T + mbtiScores.F;
+  const jpTotal = mbtiScores.J + mbtiScores.P;
+  mbtiPct.E = Math.round((mbtiScores.E / eiTotal) * 100);
+  mbtiPct.I = Math.round((mbtiScores.I / eiTotal) * 100);
+  mbtiPct.S = Math.round((mbtiScores.S / snTotal) * 100);
+  mbtiPct.N = Math.round((mbtiScores.N / snTotal) * 100);
+  mbtiPct.T = Math.round((mbtiScores.T / tfTotal) * 100);
+  mbtiPct.F = Math.round((mbtiScores.F / tfTotal) * 100);
+  mbtiPct.J = Math.round((mbtiScores.J / jpTotal) * 100);
+  mbtiPct.P = Math.round((mbtiScores.P / jpTotal) * 100);
+
+  localScores = { mbtiType, big5Pct, mbtiPct, mbtiScores };
+}
+
+function buildPrompt() {
+  if (!localScores) computeLocalScores();
+  let prompt = "以下是一位用户完成的60道双轨人格测试（MBTI × 大五人格）的完整答卷。请基于这些数据，为这个人生成一份人格解剖报告。\n\n";
+  prompt += "【数据说明】\n";
+  prompt += "- 每题1-5分：1=完全不符合，5=完全符合。每题同时映射一个MBTI极和一个大五维度。\n";
+  prompt += "- 标注「大五反向计分」的题：分数越低，该大五维度越高。\n";
+  prompt += "- MBTI轴得分与大五维度得分均为0-100，50是人群中点。\n\n";
+  prompt += "【系统计分结果（已校准，是你的核心判断依据。严禁在报告中出现任何具体数字、百分比或MBTI四字母）】\n";
+  prompt += "- MBTI四轴：E外向 " + localScores.mbtiPct.E + " / I内向 " + localScores.mbtiPct.I + "；S感觉 " + localScores.mbtiPct.S + " / N直觉 " + localScores.mbtiPct.N + "；T思考 " + localScores.mbtiPct.T + " / F情感 " + localScores.mbtiPct.F + "；J判断 " + localScores.mbtiPct.J + " / P知觉 " + localScores.mbtiPct.P + "。\n";
+  prompt += "- 大五人格：开放性O " + localScores.big5Pct.O + "，尽责性C " + localScores.big5Pct.C + "，外向性E " + localScores.big5Pct.E + "，宜人性A " + localScores.big5Pct.A + "，神经质N " + localScores.big5Pct.N + "。\n";
+  prompt += "- 摇摆区规则：某轴或某维得分在45~55之间，说明用户在这个维度是撕裂的、依情境切换的——请直接写出这种撕裂感，不许强行归类。\n";
+  prompt += "- 极端答案（某题选了1或5）是最锋利的证据，请优先使用。\n\n";
+  prompt += "【完整答卷】\n";
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    prompt += (i+1) + ". " + q.text + " [MBTI:" + mbtiLabels[q.mbti] + ", Big5:" + big5Labels[q.big5] + (q.rev ? "（大五反向计分）" : "") + "] -> 答案:" + answers[i] + "/5\n";
+  }
+  prompt += "\n【报告结构——严格按此骨架输出。禁止出现「标签」「描述」「引言」这类脚手架词汇，直接给内容。全文不少于2800字】\n\n";
+  prompt += "# （人格称号：4~6个字，原创，有画面感，如「深海灯塔」「柔锋理事」「孤星执剑人」。禁止套用任何现成类型名称）\n";
+  prompt += "> （判词：一句话戳穿这个人的核心运作模式。要求具体到——换一套答题组合，这句话就不成立）\n\n";
+  prompt += "## 你的轮廓\n（3段。用画面和场景勾勒这个人，写出他内部最显眼的那组矛盾。像写小说人物小传，不像写心理学科普。禁止抽象词堆砌）\n\n";
+  prompt += "## 战场 · 职业\n**你的锋利**\n（2~3条优势。每条的格式：单独一行加粗的总结句，像诊断结论一样直接点破这个优势是什么；然后另起一段写4~5句详细阐述——这个优势在什么具体场景里发光（要有画面）、为什么别人想学也学不来、用户自己是如何低估甚至挥霍它的。）\n**你的代价**\n（2~3条劣势。格式同上：单独一行加粗的总结句，不绕弯子；然后4~5句详细阐述——这个模式是怎么形成的、在什么具体场景爆发（要有动作和画面）、如果一直不改，他的职业生涯最可能卡死在哪里。）\n\n";
+  prompt += "## 镜子 · 成长\n**你的锋利**\n（2~3条优势。格式同上：加粗总结句 + 4~5句阐述。重点写：他自我突破时真正依靠的力量是什么、这个力量曾在哪里救过他、他为什么一直没意识到自己握着这张牌。）\n**你的代价**\n（2~3条劣势。格式同上。重点写：他的自我欺骗和自我安慰是什么、这个问题为什么像温水煮青蛙——他不是不知道，是不敢知道、再写如果继续装睡，三年后的他会变成什么样，具体到画面。）\n\n";
+  prompt += "## 渡口 · 关系\n**你的锋利**\n（2~3条优势。格式同上。重点写：他在关系里真正让人离不开的特质、这个特质如何创造深度连接、被人在深夜想起他的是哪一个瞬间。）\n**你的代价**\n（2~3条劣势。格式同上。重点写：他的关系毒性模式——那个让别人不舒服、但他自己毫无察觉的行为；说出他身边的人忍了多年没说出口的那句话；再写这个模式长期下去会让他失去什么样的人。）\n\n";
+  prompt += "## 你体内的战争\n（3个矛盾点。每个的格式：### 诗意短语小标题（如「想探索又怕烂尾」「温柔的外壳里住着一把不肯妥协的刀」），然后5~6句阐释——先给一个具体到动作和对话的生活场景，让读者一眼认出自己；再拆解这个矛盾背后两种相反的渴望或恐惧，如何在同一个人身上共存；再写它平时如何悄悄耗电；最后写它在关键时刻会让他怎么掉链子。）\n\n";
+  prompt += "## 你的阿喀琉斯之踵\n（这是全报告的收束，写足3段。第一段：把这个致命模式的运作机制完整讲清楚——它是如何伪装成优点、陪他走了很多年的。第二段：推演下去——如果他什么都不改，三年五年后这个模式会把他带到哪里，要具体到画面，不要抽象后果。第三段：用一句箴言收尾，像刻在石头上的那种，读完心里一沉。）\n\n";
+  prompt += "【每一条分析必须遵守的写法——极其重要】\n";
+  prompt += "1. 场景颗粒度：一切判断落到具体动作和画面。差的写法：「你在关系中容易压抑自己」。好的写法：「聚餐点菜时你永远说随便——不是你真的随便，是你怕自己想吃的那家店没人附和」。每条优势、劣势、矛盾，至少有一个这种颗粒度的场景。\n";
+  prompt += "2. 证据链：每条判断都要能回到具体得分或某几道题的极端选择。写弱点时优先引用用户自己的选择（转述其含义，不要报题号）。\n";
+  prompt += "3. 反巴纳姆：禁止任何放之四海皆准的句子（「你外表坚强内心柔软」「你渴望被理解」之类）。写完每条自问：这句话贴在人格相反的人身上是否也成立？成立就重写。\n";
+  prompt += "4. 大胆尖锐：判断可以狠，比喻可以狠，允许直接点名难堪的真相——比如「你不是善良，你是怕冲突」「你的努力里有表演的成分」「你用理性包装的，其实是怯场」。写到痛处时，禁止用「可能」「或许」「某种程度上」来稀释。但每一句狠话都必须有答题证据撑腰——没有证据的狠是廉价的。\n";
+  prompt += "5. 共鸣来自被看见：写用户自己模糊感觉到、但从没被人说穿的事；写他深夜里对自己含糊其辞、你却替他说清楚的那部分。\n";
+  prompt += "6. 禁止鸡汤、禁止鼓励、禁止「你可以的」。也不许写成行动指南或建议清单——你只负责诊断，不负责开药方。读完的感觉不是绝望，是被一盆冷水浇醒后发现窗外天亮了。\n";
+  prompt += "7. 用「你」直接称呼。语言大胆、有文学性、有隐喻，但每个隐喻都必须服务于准确。\n";
+  prompt += "8. 中文输出，Markdown格式。禁止出现MBTI四字母、任何分数和百分比、以及「巴纳姆」等元叙述词汇。\n";
+  return prompt;
+}
+
+async function analyzeWithAPI() {
+  const apiKey = document.getElementById("apikey-input").value.trim();
+  if (!apiKey) {
+    alert("请输入 API Key");
+    return;
+  }
+  if (!apiKey.startsWith("sk-")) {
+    alert("API Key 格式不正确，应以 sk- 开头");
+    return;
+  }
+  const btn = document.getElementById("btn-analyze");
+  btn.disabled = true;
+  btn.textContent = "分析中...";
+  showPage("page-loading");
+  currentPrompt = buildPrompt();
+  try {
+    const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify({
+        model: "moonshot-v1-32k",
+        messages: [
+          {role: "system", content: "你是一位人格解剖师，以准确为最高美德。你的文字锋利、大胆、有文学性，像一把裹着丝绸的刀——但你的每一刀都必须落在证据上：用户的答题数据是你唯一的解剖台。你拒绝放之四海皆准的套话，拒绝鸡汤，拒绝建议清单。你说出用户身边的人忍了多年没说出口的话。你的目标不是让用户舒服，而是让用户读完沉默三分钟，然后说：这就是我。"},
+          {role: "user", content: currentPrompt}
+        ],
+        temperature: 0.8,
+        max_tokens: 8000
+      })
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(function() { return {}; });
+      throw new Error(errData.error && errData.error.message ? errData.error.message : "API 请求失败 (" + response.status + ")");
+    }
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    showResult(content);
+  } catch (err) {
+    console.error(err);
+    showPage("page-apikey");
+    btn.disabled = false;
+    btn.textContent = "重试";
+    const apikeyCard = document.querySelector("#page-apikey .apikey-card");
+    let errorHtml = '<div class="error-box" id="api-error">' +
+      '<h4>API 调用失败</h4>' +
+      '<p>' + err.message + '</p>' +
+      '<p style="margin-top:8px">可能原因：网络问题、API Key 错误、或浏览器安全策略阻止跨域请求。</p>' +
+    '</div>';
+    const existing = document.getElementById("api-error");
+    if (existing) existing.remove();
+    apikeyCard.insertAdjacentHTML("beforeend", errorHtml);
+    document.getElementById("prompt-textarea").value = currentPrompt || buildPrompt();
+    showFallback();
+  }
+}
+
+function showFallback() {
+  showPage("page-result");
+  document.getElementById("result-content").innerHTML = '<p style="color:#86868b;text-align:center;padding:40px 0;">API 调用失败，已启用备选方案。请复制下方 Prompt 到 KIMI 网页版手动分析。</p>';
+  document.getElementById("fallback-section").style.display = "block";
+  document.getElementById("prompt-textarea").value = currentPrompt || buildPrompt();
+}
+
+function copyPrompt() {
+  const textarea = document.getElementById("prompt-textarea");
+  textarea.select();
+  document.execCommand("copy");
+  alert("Prompt 已复制到剪贴板，请粘贴到 KIMI 网页版发送");
+}
+
+function showResult(markdown) {
+  showPage("page-result");
+  document.getElementById("result-content").innerHTML = renderMarkdown(markdown);
+  document.getElementById("fallback-section").style.display = "none";
+  // Render graphical displays
+  if (localScores) {
+    drawRadar(localScores.big5Pct);
+    renderBig5Bars(localScores.big5Pct);
+    renderDimGrid(localScores.big5Pct);
+    renderMBTIDims(localScores.mbtiPct);
+  }
+}
+
+// ========== Graphical Rendering ==========
+function drawRadar(big5) {
+  const svg = document.getElementById("radar-svg");
+  const cx = 160, cy = 140, r = 90;
+  const dims = ["O","C","E","A","N"];
+  const labels = ["开放性","尽责性","外向性","宜人性","神经质"];
+  const n = 5;
+  let paths = "";
+  for (let level = 1; level <= 4; level++) {
+    const lr = r * level / 4;
+    let d = "";
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+      const x = cx + lr * Math.cos(angle);
+      const y = cy + lr * Math.sin(angle);
+      d += (i===0 ? "M" : "L") + x + "," + y;
+    }
+    d += "Z";
+    paths += '<path d="' + d + '" class="radar-grid" />';
+  }
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    paths += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" class="radar-axis" />';
+  }
+  let dataD = "";
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+    const val = big5[dims[i]] / 100;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    dataD += (i===0 ? "M" : "L") + x + "," + y;
+    paths += '<circle cx="' + x + '" cy="' + y + '" r="3" class="radar-point" />';
+  }
+  dataD += "Z";
+  paths += '<path d="' + dataD + '" class="radar-data" />';
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI/2;
+    const lx = cx + (r + 22) * Math.cos(angle);
+    const ly = cy + (r + 22) * Math.sin(angle);
+    paths += '<text x="' + lx + '" y="' + (ly+4) + '" class="radar-label">' + labels[i] + '</text>';
+  }
+  svg.innerHTML = paths;
+}
+
+function renderBig5Bars(big5) {
+  const container = document.getElementById("big5-bars");
+  const dimNames = {O:"开放性",C:"尽责性",E:"外向性",A:"宜人性",N:"神经质"};
+  const dimColors = {O:"#0071e3",C:"#ff3b30",E:"#34c759",A:"#af52de",N:"#ff9500"};
+  let html = "";
+  for (const dim of ["O","C","E","A","N"]) {
+    html += '<div class="score-row">' +
+      '<div class="score-label">' + dimNames[dim] + '</div>' +
+      '<div class="score-bar-wrap"><div class="score-bar" style="width:' + big5[dim] + "%;background:" + dimColors[dim] + '"></div></div>' +
+      '<div class="score-val">' + big5[dim] + '</div>' +
+    '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function big5Level(v) {
+  if (v >= 65) return "显著偏高";
+  if (v >= 55) return "偏高";
+  if (v > 45) return "均衡区";
+  if (v > 35) return "偏低";
+  return "显著偏低";
+}
+
+function renderDimGrid(big5) {
+  const grid = document.getElementById("dim-grid");
+  const dimNames = {O:"开放性",C:"尽责性",E:"外向性",A:"宜人性",N:"神经质"};
+  const dimColors = {O:"#0071e3",C:"#ff3b30",E:"#34c759",A:"#af52de",N:"#ff9500"};
+  let html = "";
+  for (const dim of ["O","C","E","A","N"]) {
+    html += '<div class="dim-card">' +
+      '<h5>' + dimNames[dim] + ' · ' + big5Level(big5[dim]) + '</h5>' +
+      '<div class="dim-val" style="color:' + dimColors[dim] + '">' + big5[dim] + '<span style="font-size:14px;color:#86868b">/100</span></div>' +
+      '<div class="dim-bar"><div class="dim-bar-inner" style="width:' + big5[dim] + "%;background:" + dimColors[dim] + '"></div></div>' +
+    '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function renderMBTIDims(mbtiPct) {
+  const container = document.getElementById("mbti-dims");
+  const letterColors = {E:"#34c759", I:"#5856d6", S:"#ff9500", N:"#af52de", T:"#0071e3", F:"#ff2d55", J:"#ff3b30", P:"#5ac8fa"};
+  let badge = '<div class="type-badge">';
+  if (localScores && localScores.mbtiType) {
+    for (const ch of localScores.mbtiType) {
+      badge += '<div class="type-letter" style="background:' + letterColors[ch] + '">' + ch + '</div>';
+    }
+  }
+  badge += '</div><div class="type-badge-sub">你的四轴倾向组合 · 基于本地双极计分</div>';
+  const dims = [
+    {left:"E", right:"I", leftLabel:"外向", rightLabel:"内向", leftColor:"#34c759", rightColor:"#5856d6"},
+    {left:"S", right:"N", leftLabel:"感觉", rightLabel:"直觉", leftColor:"#ff9500", rightColor:"#af52de"},
+    {left:"T", right:"F", leftLabel:"思考", rightLabel:"情感", leftColor:"#0071e3", rightColor:"#ff2d55"},
+    {left:"J", right:"P", leftLabel:"判断", rightLabel:"知觉", leftColor:"#ff3b30", rightColor:"#5ac8fa"}
+  ];
+  let html = "";
+  for (const d of dims) {
+    const leftPct = mbtiPct[d.left];
+    const rightPct = mbtiPct[d.right];
+    const leftWidth = leftPct;
+    const rightWidth = rightPct;
+    const dominant = leftPct > rightPct ? d.leftLabel : d.rightLabel;
+    const dominantColor = leftPct > rightPct ? d.leftColor : d.rightColor;
+    html += '<div class="mbti-dim-row">' +
+      '<div class="mbti-dim-label">' + d.leftLabel + " / " + d.rightLabel + '</div>' +
+      '<div class="mbti-dim-bar-wrap">' +
+        '<div class="mbti-dim-center"></div>' +
+        '<div class="mbti-dim-left" style="width:' + leftWidth + "%;background:" + d.leftColor + '">' + leftPct + "% " + d.leftLabel + '</div>' +
+        '<div class="mbti-dim-right" style="width:' + rightWidth + "%;background:" + d.rightColor + '">' + rightPct + "% " + d.rightLabel + '</div>' +
+      '</div>' +
+      '<div class="mbti-dim-pct" style="color:' + dominantColor + '">' + dominant + "倾向</div>" +
+    '</div>';
+  }
+  container.innerHTML = badge + html;
+}
+
+// ========== Markdown Renderer ==========
+function renderMarkdown(text) {
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  // Code blocks
+  html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
+    return '<pre style="background:#f5f5f7;padding:12px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.5;margin:12px 0;">' + code.trim() + '</pre>';
+  });
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code style="background:#f5f5f7;padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="report-title">$1</h1>');
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // Blockquote
+  html = html.replace(/^&gt;\s?(.*$)/gim, '<blockquote>$1</blockquote>');
+  // Unordered list
+  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, function(m) {
+    return '<ul>' + m + '</ul>';
+  });
+  // Ordered list (simple)
+  html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
+  // Horizontal rule
+  html = html.replace(/^\-\-\-+/gim, '<hr>');
+  html = html.replace(/^\*\*\*+/gim, '<hr>');
+  // Paragraphs - split by double newline
+  const paragraphs = html.split(/\n\n+/);
+  html = paragraphs.map(function(p) {
+    p = p.trim();
+    if (!p) return "";
+    if (p.startsWith("<h") || p.startsWith("<pre") || p.startsWith("<ul") || p.startsWith("<blockquote") || p.startsWith("<hr") || p.startsWith("<li")) {
+      return p;
+    }
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join("\n");
+  return html;
+}
+</script>
+
+</body>
+</html>
